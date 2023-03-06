@@ -113,13 +113,85 @@ public class Model extends Observable {
         // TODO: Modify this.board (and perhaps this.score) to account
         // for the tilt to the Side SIDE. If the board changed, set the
         // changed local variable to true.
+        if (!side.equals(Side.NORTH)) {
+            board.setViewingPerspective(side);
+        }
+        for (int c = 0; c < size(); c++) {
+            int slow = size()-1, fast = size()-2;
+            while (fast >= 0) {
+                Tile slowTile = board.tile(c, slow);
+                Tile fastTile = board.tile(c, fast);
+                if (fastTile == null) {
+                    fast--;
+                } else if (slowTile == null) {
+                    if (board.move(c, slow, fastTile)) {
+                        this.score += board.tile(c, slow).value();
+                    }
+                    fastTile = null;
+                    fast--;
+                    changed = true;
+                } else if (slowTile.value() == fastTile.value()) {
+                    if (board.move(c, slow, fastTile)) {
+                        this.score += board.tile(c, slow).value();
+                        slow--;
+                    }
+                    fastTile = null;
+                    fast--;
+                    changed = true;
+                } else {
+                    slow--;
+                    if(board.move(c, slow, fastTile)) {
+                        this.score += board.tile(c, slow).value();
+                    }
+                    fastTile = null;
+                    fast--;
+                    changed = true;
+                }
+            }
+//            int ceil = size();
+//            for (int r = 0; r < size(); r++) {
+//                Tile t = board.tile(c,r);
+//
+//
+//                if (t != null) {
+//                    int dest = r;
+//                    for (int i = r+1; i < ceil; i++) {
+//                        Tile northNeighbor = board.tile(c, i);
+//                        if (northNeighbor != null && northNeighbor.value() != t.value()) {
+//                            dest = i;
+//                            break;
+//                        }
+//
+//                    }
+//
+//                    System.out.println(t);
+//                    boolean merged = board.move(c, dest, t);
+//
+//                    changed = changed || merged || dest!=r;
+//
+//                    System.out.println(changed);
+//                    if (merged) {
+//                        ceil = dest;
+//                    }
+//                }
+//            }
+////            tiltUp()
+        }
 
+        if (!side.equals(Side.NORTH)) {
+            board.setViewingPerspective(Side.NORTH);
+        }
         checkGameOver();
+        if (this.gameOver) {
+            this.maxScore = this.score;
+        }
         if (changed) {
             setChanged();
         }
         return changed;
     }
+
+//    private boolean
 
     /** Checks if the game is over and sets the gameOver variable
      *  appropriately.
@@ -138,6 +210,13 @@ public class Model extends Observable {
      * */
     public static boolean emptySpaceExists(Board b) {
         // TODO: Fill in this function.
+        for (int row = 0; row < b.size(); row++) {
+            for (int col = 0; col < b.size(); col++) {
+                if (b.tile(col, row) == null) {
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
@@ -148,6 +227,13 @@ public class Model extends Observable {
      */
     public static boolean maxTileExists(Board b) {
         // TODO: Fill in this function.
+        for (int row = 0; row < b.size(); row++) {
+            for (int col = 0; col < b.size(); col++) {
+                if (b.tile(col,row) != null && b.tile(col, row).value() == MAX_PIECE) {
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
@@ -159,6 +245,24 @@ public class Model extends Observable {
      */
     public static boolean atLeastOneMoveExists(Board b) {
         // TODO: Fill in this function.
+        if (emptySpaceExists(b)) return true;
+        for (int row = 0; row < b.size(); row++) {
+            for (int col = 0; col < b.size(); col++) {
+                if (atLeastOneSameNeighborExists(b, col, row)) return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean atLeastOneSameNeighborExists(Board b, int col, int row) {
+        // check the north neighbor
+        if (row+1 < b.size() && b.tile(col, row+1).value() == b.tile(col, row).value()) return true;
+        // check the south neighbor
+        if (row-1 >= 0 && b.tile(col, row-1).value() == b.tile(col, row).value()) return true;
+        // check the east neighbor
+        if (col+1 < b.size() && b.tile(col+1, row).value() == b.tile(col, row).value()) return true;
+        // check the west neighbor
+        if (col-1 >= 0 && b.tile(col-1, row).value() == b.tile(col, row).value()) return true;
         return false;
     }
 
